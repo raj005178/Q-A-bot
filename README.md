@@ -114,14 +114,3 @@ Document-QA-RAG/
 
 Contributions are welcome!
 If you find bugs, have suggestions, or want to add features — open an issue or submit a pull request.
-
-🧑‍💻 Developer Note
-
-This is a work in progress project, built for learning and exploring Generative AI and RAG systems.
-Once completed, it will serve as a full end-to-end Document Q&A chatbot example using Cohere and Chroma.
-
-
-
-
-👤 Developer: [Your Name]
-📧 Email: your.email@example.com
