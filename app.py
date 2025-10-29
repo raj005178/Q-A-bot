@@ -91,12 +91,22 @@ def process_pdf(uploaded_file):
                 for item in items:
                     # LangChain Document objects have `page_content`
                     if hasattr(item, "page_content"):
-                        out.append(item.page_content)
+                        txt = item.page_content
+                        # truncate overly long texts to a safe size
+                        if hasattr(self, "max_text_chars") and self.max_text_chars:
+                            txt = txt[: self.max_text_chars]
+                        out.append(txt)
                     # Some APIs might pass dict-like objects
                     elif isinstance(item, dict) and "page_content" in item:
-                        out.append(item["page_content"])
+                        txt = item["page_content"]
+                        if hasattr(self, "max_text_chars") and self.max_text_chars:
+                            txt = txt[: self.max_text_chars]
+                        out.append(txt)
                     else:
-                        out.append(str(item))
+                        txt = str(item)
+                        if hasattr(self, "max_text_chars") and self.max_text_chars:
+                            txt = txt[: self.max_text_chars]
+                        out.append(txt)
                 return out
 
             def _embed_call(self, texts_batch):
@@ -207,6 +217,23 @@ def process_pdf(uploaded_file):
                 return list(resp)[0]
 
         embeddings = CohereEmbeddingsWrapper(cohere_client, "embed-english-v3.0")
+        # Debug: show number of chunks and a sample to help diagnose embedding payload issues
+        try:
+            num_chunks = len(texts)
+            sample_chunk = texts[0].page_content if hasattr(texts[0], "page_content") else str(texts[0])
+            st.write(f"Debug: number of chunks={num_chunks}")
+            st.write("Debug: sample chunk (first 300 chars):")
+            st.code(sample_chunk[:300])
+
+            # Also show the actual payload for the first embedding batch (after truncation)
+            preview_texts = embeddings._to_text_list(texts[: embeddings.batch_size])
+            st.write(f"Debug: first batch size={len(preview_texts)}; showing first 2 items and lengths:")
+            for i, t in enumerate(preview_texts[:2]):
+                st.write(f"  item {i} length={len(t)} chars")
+                st.code(t[:300])
+        except Exception:
+            # if Streamlit not available or texts empty, skip
+            pass
 
         vector_store = Chroma.from_documents(
             documents=texts,
